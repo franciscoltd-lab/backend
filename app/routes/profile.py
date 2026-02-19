@@ -2,9 +2,10 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.deps import get_db, get_current_user
-from app.models import ProfileGallery
+from app.models import Profile, ProfileGallery
 from app.schemas import ProfileOut, GalleryItem, ProfileUpdate
 from app.models import User
+from app.routes.media import save_base64_image
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 
@@ -60,3 +61,62 @@ def update_profile(
     db.refresh(user)
 
     return me(user)
+
+@router.post("/me/profile-image")
+def set_profile_image(
+    body: dict,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    data_url = body.get("profile_image_base64")
+    if not data_url:
+        raise HTTPException(422, "profile_image_base64 required")
+
+    prof = db.query(Profile).filter(Profile.user_id == user.id).first()
+    if not prof:
+        raise HTTPException(404, "Profile not found")
+
+    prof.profile_image_url = save_base64_image(data_url)
+
+    db.commit()
+    db.refresh(prof)
+
+    return {"ok": True, "profile_image_url": prof.profile_image_url}
+
+@router.post("/me/gallery")
+def add_gallery(
+    body: dict,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    images = body.get("gallery_base64") or []
+    if not isinstance(images, list) or not images:
+        raise HTTPException(422, "gallery_base64 must be a non-empty list")
+
+    urls = []
+    for img in images:
+        url = save_base64_image(img)
+        db.add(ProfileGallery(user_id=user.id, image_url=url))
+        urls.append(url)
+
+    db.commit()
+    return {"ok": True, "items": urls}
+
+
+@router.delete("/me/gallery/{gallery_id}")
+def delete_gallery_item(
+    gallery_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    row = db.query(ProfileGallery).filter(
+        ProfileGallery.id == gallery_id,
+        ProfileGallery.user_id == user.id
+    ).first()
+
+    if not row:
+        raise HTTPException(404, "Not found")
+
+    db.delete(row)
+    db.commit()
+    return {"ok": True}

@@ -62,3 +62,16 @@ class ProfileUpdate(BaseModel):
     bio: Optional[str] = Field(default=None, min_length=20)
     artistic_style: Optional[str] = Field(default=None, min_length=2, max_length=120)
     category: Optional[str] = Field(default=None, min_length=2, max_length=120)
+
+# app/schemas.py
+class UpdateProfile(BaseModel):
+    display_name: Optional[str] = Field(default=None, min_length=2, max_length=120)
+    bio: Optional[str] = Field(default=None, min_length=0, max_length=2000)
+    artistic_style: Optional[str] = Field(default=None, min_length=2, max_length=120)
+    category: Optional[str] = Field(default=None, min_length=2, max_length=120)
+
+    street: Optional[str] = None
+    number: Optional[str] = None
+    postal_code: Optional[str] = None
+    colony: Optional[str] = None
+    municipality: Optional[str] = None
