@@ -62,12 +62,19 @@ def update_profile(
 
     return me(user)
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 @router.post("/me/profile-image")
 def set_profile_image(
     body: dict,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    
+    logger.info(">>> set_profile_image CALLED user=%s", user.id)
+
     data_url = body.get("profile_image_base64")
     if not data_url:
         raise HTTPException(422, "profile_image_base64 required")
