@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     JWT_SECRET: str
     JWT_EXPIRE_MIN: int = 60 * 24 * 30
     MEDIA_DIR: str = "./media"
-    PUBLIC_MEDIA_BASE: str = "http://localhost:8000/media"
+    PUBLIC_MEDIA_BASE: str = "https://quetzarpi.gpolufesa.com/media"
     BANK_NAME: str 
     BANK_ACCOUNT: str 
     BANK_CLABE: str 
