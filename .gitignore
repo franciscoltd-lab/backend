@@ -1,2 +1,20 @@
 /.env
 /.venv
+
+# Archivos compilados de Python
+*.pyc
+*.pyo
+*.pyd
+
+# Carpetas auto-generadas
+__pycache__/
+
+
+# Imágenes
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.svg
+*.webp
