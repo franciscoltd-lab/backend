@@ -232,3 +232,32 @@ def get_public_artist(user_id: int, db: Session = Depends(get_db)):
             for g in gallery
         ]
     }
+
+
+@router.get("/establishment/{user_id}")
+def get_public_establishment(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(
+        User.id == user_id,
+        User.role == "establishment"
+    ).first()
+
+    if not user:
+        raise HTTPException(404, "Establishment not found")
+
+    profile = db.query(Profile).filter(Profile.user_id == user_id).first()
+
+    # OJO: normalmente establishments NO tienen gallery, pero si luego quieres fotos del lugar:
+    # gallery = db.query(ProfileGallery).filter(ProfileGallery.user_id == user_id).all()
+
+    return {
+        "user_id": user.id,
+        "display_name": profile.display_name,
+        "profile_image_url": profile.profile_image_url,
+        "category": profile.category,
+        "street": profile.street,
+        "number": profile.number,
+        "postal_code": profile.postal_code,
+        "colony": profile.colony,
+        "municipality": profile.municipality,
+        # "gallery": [{"id": g.id, "image_url": g.image_url} for g in gallery],
+    }
