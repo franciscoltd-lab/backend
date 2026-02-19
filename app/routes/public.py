@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
 from app.deps import get_db
@@ -205,3 +205,30 @@ def home_swipers(
         ],
     }
 
+@router.get("/artist/{user_id}")
+def get_public_artist(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(
+        User.id == user_id,
+        User.role == "artist"
+    ).first()
+
+    if not user:
+        raise HTTPException(404, "Artist not found")
+
+    profile = db.query(Profile).filter(Profile.user_id == user_id).first()
+
+    gallery = db.query(ProfileGallery).filter(
+        ProfileGallery.user_id == user_id
+    ).all()
+
+    return {
+        "user_id": user.id,
+        "display_name": profile.display_name,
+        "profile_image_url": profile.profile_image_url,
+        "bio": profile.bio,
+        "artistic_style": profile.artistic_style,
+        "gallery": [
+            {"id": g.id, "image_url": g.image_url}
+            for g in gallery
+        ]
+    }
