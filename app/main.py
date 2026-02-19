@@ -14,16 +14,25 @@ from app.routes.public import router as public_router
 
 app = FastAPI(title="Quetzart API")
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
 origins = [
     "http://localhost",
     "http://localhost:4200",
-    "capacitor://localhost",
-    "ionic://localhost",
+    "https://localhost",          # tu origen del error
+    "capacitor://localhost",      # para app nativa
+    "ionic://localhost",          # si lo usas
+    # agrega aquí también el dominio del frontend si lo tienes en producción,
+    # por ejemplo:
+    # "https://mi-frontend.com",
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=origins,        # o ["*"] mientras pruebas (sin credenciales)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
