@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
 from app.deps import get_db
 from app.models import User, Profile, ProfileGallery
+from app.core.config import settings
+
 
 router = APIRouter(prefix="/public", tags=["public"])
 
@@ -261,3 +264,17 @@ def get_public_establishment(user_id: int, db: Session = Depends(get_db)):
         "municipality": profile.municipality,
         # "gallery": [{"id": g.id, "image_url": g.image_url} for g in gallery],
     }
+
+
+class BankInfoOut(BaseModel):
+    bank: str
+    account: str
+    clabe: str
+
+@router.get("/bank-info", response_model=BankInfoOut)
+def get_bank_info():
+    return BankInfoOut(
+        bank=settings.BANK_NAME,
+        account=settings.BANK_ACCOUNT,
+        clabe=settings.BANK_CLABE,
+    )
