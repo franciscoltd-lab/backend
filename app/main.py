@@ -11,13 +11,7 @@ from app.routes.auth import router as auth_router
 from app.routes.profile import router as profile_router
 from app.routes.public import router as public_router
 
-
 app = FastAPI(title="Quetzart API")
-
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-app = FastAPI()
 
 origins = [
     "http://localhost",
