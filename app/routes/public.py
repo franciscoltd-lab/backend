@@ -5,6 +5,7 @@ from sqlalchemy import func, or_
 from app.deps import get_db
 from app.models import User, Profile, ProfileGallery
 from app.core.config import settings
+from app.routes.media import public_media_url
 
 
 router = APIRouter(prefix="/public", tags=["public"])
@@ -47,7 +48,7 @@ def list_artists(
             {
                 "user_id": r.id,
                 "display_name": r.display_name,
-                "profile_image_url": r.profile_image_url,
+                "profile_image_url": public_media_url(r.profile_image_url),
                 "artistic_style": r.artistic_style,
             }
             for r in rows
@@ -88,7 +89,7 @@ def list_establishments(
             {
                 "user_id": r.id,
                 "display_name": r.display_name,
-                "profile_image_url": r.profile_image_url,
+                "profile_image_url": public_media_url(r.profile_image_url),
                 "category": r.category,
                 "municipality": r.municipality,
             }
@@ -126,7 +127,7 @@ def list_artworks(
         "items": [
             {
                 "gallery_id": r.id,
-                "image_url": r.image_url,
+                "image_url": public_media_url(r.image_url),
                 "user_id": r.user_id,
                 "display_name": r.display_name,
             }
@@ -182,7 +183,7 @@ def home_swipers(
             {
                 "user_id": r.id,
                 "display_name": r.display_name,
-                "profile_image_url": r.profile_image_url,
+                "profile_image_url": public_media_url(r.profile_image_url),
                 "artistic_style": r.artistic_style,
             }
             for r in artists_rows
@@ -191,7 +192,7 @@ def home_swipers(
             {
                 "user_id": r.id,
                 "display_name": r.display_name,
-                "profile_image_url": r.profile_image_url,
+                "profile_image_url": public_media_url(r.profile_image_url),
                 "category": r.category,
                 "municipality": r.municipality,
             }
@@ -200,7 +201,7 @@ def home_swipers(
         "artworks": [
             {
                 "gallery_id": r.id,
-                "image_url": r.image_url,
+                "image_url": public_media_url(r.image_url),
                 "user_id": r.user_id,
                 "artist_name": r.artist_name,
             }
@@ -227,11 +228,11 @@ def get_public_artist(user_id: int, db: Session = Depends(get_db)):
     return {
         "user_id": user.id,
         "display_name": profile.display_name,
-        "profile_image_url": profile.profile_image_url,
+        "profile_image_url": public_media_url(profile.profile_image_url),
         "bio": profile.bio,
         "artistic_style": profile.artistic_style,
         "gallery": [
-            {"id": g.id, "image_url": g.image_url}
+            {"id": g.id, "image_url": public_media_url(g.image_url)}
             for g in gallery
         ]
     }
@@ -255,7 +256,7 @@ def get_public_establishment(user_id: int, db: Session = Depends(get_db)):
     return {
         "user_id": user.id,
         "display_name": profile.display_name,
-        "profile_image_url": profile.profile_image_url,
+        "profile_image_url": public_media_url(profile.profile_image_url),
         "category": profile.category,
         "street": profile.street,
         "number": profile.number,

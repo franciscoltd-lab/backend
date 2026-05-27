@@ -5,7 +5,7 @@ from app.deps import get_db, get_current_user
 from app.models import Profile, ProfileGallery
 from app.schemas import ProfileOut, GalleryItem, ProfileUpdate
 from app.models import User
-from app.routes.media import save_base64_image
+from app.routes.media import save_base64_image, public_media_url
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 
@@ -16,7 +16,7 @@ def me(user: User = Depends(get_current_user)):
         role=user.role,
         email=user.email,
         display_name=p.display_name,
-        profile_image_url=p.profile_image_url,
+        profile_image_url=public_media_url(p.profile_image_url),
         last_name_change_at=p.last_name_change_at.isoformat() if p.last_name_change_at else None,
 
         bio=p.bio,
@@ -29,7 +29,7 @@ def me(user: User = Depends(get_current_user)):
         colony=p.colony,
         municipality=p.municipality,
 
-        gallery=[GalleryItem(id=g.id, image_url=g.image_url) for g in user.gallery]
+        gallery=[GalleryItem(id=g.id, image_url=public_media_url(g.image_url)) for g in user.gallery]
     )
 
 @router.patch("/me", response_model=ProfileOut)
@@ -88,7 +88,7 @@ def set_profile_image(
     db.commit()
     db.refresh(prof)
 
-    return {"ok": True, "profile_image_url": prof.profile_image_url}
+    return {"ok": True, "profile_image_url": public_media_url(prof.profile_image_url)}
 
 @router.post("/me/gallery")
 def add_gallery(
@@ -104,7 +104,7 @@ def add_gallery(
     for img in images:
         url = save_base64_image(img)
         db.add(ProfileGallery(user_id=user.id, image_url=url))
-        urls.append(url)
+        urls.append(public_media_url(url))
 
     db.commit()
     return {"ok": True, "items": urls}
