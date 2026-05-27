@@ -30,6 +30,21 @@ class LoginIn(BaseModel):
     email: EmailStr
     password: str
 
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class PasswordResetVerify(BaseModel):
+    email: EmailStr
+    code: str = Field(min_length=6, max_length=6)
+
+class PasswordResetConfirm(BaseModel):
+    email: EmailStr
+    code: str = Field(min_length=6, max_length=6)
+    new_password: str = Field(min_length=8)
+
+class MessageOut(BaseModel):
+    message: str
+
 class TokenOut(BaseModel):
     access_token: str
     token_type: str = "bearer"

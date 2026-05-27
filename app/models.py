@@ -12,6 +12,19 @@ class User(Base):
 
     profile = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete")
     gallery = relationship("ProfileGallery", back_populates="user", cascade="all, delete")
+    password_reset_codes = relationship("PasswordResetCode", back_populates="user", cascade="all, delete")
+
+
+class PasswordResetCode(Base):
+    __tablename__ = "password_reset_codes"
+    id = Column(BigInteger, primary_key=True, index=True)
+    user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    code_hash = Column(String(255), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    used_at = Column(DateTime, nullable=True)
+    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+
+    user = relationship("User", back_populates="password_reset_codes")
 
 class Profile(Base):
     __tablename__ = "profiles"
