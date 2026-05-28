@@ -9,6 +9,8 @@ from app.routes.media import save_base64_image, public_media_url
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 
+DEFAULT_ADMIN_PROFILE_IMAGE = "assets/avatar-placeholder.png"
+
 @router.get("/me", response_model=ProfileOut)
 def me(user: User = Depends(get_current_user)):
     p = user.profile
@@ -35,7 +37,7 @@ def me(user: User = Depends(get_current_user)):
             role=user.role,
             email=user.email,
             display_name="Admin",
-            profile_image_url=None,
+            profile_image_url=DEFAULT_ADMIN_PROFILE_IMAGE,
             last_name_change_at=None,
             bio=None,
             artistic_style=None,
@@ -45,7 +47,7 @@ def me(user: User = Depends(get_current_user)):
             postal_code=None,
             colony=None,
             municipality=None,
-            gallery=[],
+            gallery=[serialize_artwork(g) for g in user.gallery],
         )
 
     if not p:
@@ -135,6 +137,16 @@ def set_profile_image(
         raise HTTPException(422, "profile_image_base64 required")
 
     prof = db.query(Profile).filter(Profile.user_id == user.id).first()
+    if not prof and user.role == "admin":
+        prof = Profile(
+            user_id=user.id,
+            display_name="Admin",
+            bio="Perfil de prueba para administrar y validar la experiencia de artista.",
+            artistic_style="Pruebas internas",
+        )
+        db.add(prof)
+        db.flush()
+
     if not prof:
         raise HTTPException(404, "Profile not found")
 
