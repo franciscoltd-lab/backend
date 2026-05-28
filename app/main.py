@@ -64,6 +64,17 @@ def ensure_profile_gallery_columns():
 
 ensure_profile_gallery_columns()
 
+def ensure_user_role_admin():
+    inspector = inspect(engine)
+    if not inspector.has_table("users"):
+        return
+
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE users MODIFY role ENUM('artist', 'establishment', 'admin') NOT NULL"))
+
+
+ensure_user_role_admin()
+
 # Media
 os.makedirs(settings.MEDIA_DIR, exist_ok=True)
 app.mount("/media", StaticFiles(directory=settings.MEDIA_DIR), name="media")

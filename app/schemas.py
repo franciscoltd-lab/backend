@@ -3,7 +3,7 @@ from decimal import Decimal
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List, Literal
 
-Role = Literal["artist", "establishment"]
+Role = Literal["artist", "establishment", "admin"]
 
 class RegisterArtist(BaseModel):
     role: Literal["artist"] = "artist"
