@@ -1,3 +1,5 @@
+import unicodedata
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -22,9 +24,17 @@ ACCENT_REPLACEMENTS = (
 
 def normalize_search_text(value: str) -> str:
     value = value.strip().lower()
+    value = unicodedata.normalize("NFKD", value)
+    value = "".join(char for char in value if not unicodedata.combining(char))
     for accented, plain in ACCENT_REPLACEMENTS:
         value = value.replace(accented, plain)
     return value
+
+
+def matches_normalized(value: str | None, search: str) -> bool:
+    if not value:
+        return False
+    return normalize_search_text(search) in normalize_search_text(value)
 
 
 def normalized_column(column):
@@ -60,15 +70,21 @@ def list_artists(
         .filter(User.role == "artist")
     )
 
-    if search:
-        s = f"%{search.strip()}%"
-        q = q.filter(or_(
-            Profile.display_name.like(s),
-            Profile.artistic_style.like(s),
-        ))
+    rows = q.all()
 
-    total = q.count()
-    rows = q.offset(offset).limit(limit).all()
+    if search:
+        if search_field == "name":
+            rows = [r for r in rows if matches_normalized(r.display_name, search)]
+        elif search_field == "style":
+            rows = [r for r in rows if matches_normalized(r.artistic_style, search)]
+        else:
+            rows = [
+                r for r in rows
+                if matches_normalized(r.display_name, search) or matches_normalized(r.artistic_style, search)
+            ]
+
+    total = len(rows)
+    rows = rows[offset:offset + limit]
 
     return {
         "page": page,
@@ -130,6 +146,7 @@ def list_establishments(
 @router.get("/artworks")
 def list_artworks(
     search: str | None = Query(default=None),
+    search_field: str | None = Query(default=None),
     page: int = 1,
     size: int = 20,
     db: Session = Depends(get_db),
