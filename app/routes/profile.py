@@ -12,6 +12,45 @@ router = APIRouter(prefix="/profile", tags=["profile"])
 @router.get("/me", response_model=ProfileOut)
 def me(user: User = Depends(get_current_user)):
     p = user.profile
+    if user.role == "admin":
+        if p:
+            return ProfileOut(
+                role=user.role,
+                email=user.email,
+                display_name=p.display_name,
+                profile_image_url=public_media_url(p.profile_image_url),
+                last_name_change_at=p.last_name_change_at.isoformat() if p.last_name_change_at else None,
+                bio=p.bio,
+                artistic_style=p.artistic_style,
+                category=p.category,
+                street=p.street,
+                number=p.number,
+                postal_code=p.postal_code,
+                colony=p.colony,
+                municipality=p.municipality,
+                gallery=[serialize_artwork(g) for g in user.gallery],
+            )
+
+        return ProfileOut(
+            role=user.role,
+            email=user.email,
+            display_name="Admin",
+            profile_image_url=None,
+            last_name_change_at=None,
+            bio=None,
+            artistic_style=None,
+            category=None,
+            street=None,
+            number=None,
+            postal_code=None,
+            colony=None,
+            municipality=None,
+            gallery=[],
+        )
+
+    if not p:
+        raise HTTPException(404, "Profile not found")
+
     return ProfileOut(
         role=user.role,
         email=user.email,
@@ -34,7 +73,7 @@ def me(user: User = Depends(get_current_user)):
 
 
 def require_artist(user: User):
-    if user.role != "artist":
+    if user.role not in ("artist", "admin"):
         raise HTTPException(403, "Only artists can manage artworks")
 
 
@@ -63,7 +102,7 @@ def update_profile(
         p.display_name = payload.display_name
         p.last_name_change_at = datetime.utcnow()
 
-    if user.role == "artist":
+    if user.role in ("artist", "admin"):
         if payload.bio is not None:
             p.bio = payload.bio
         if payload.artistic_style is not None:
