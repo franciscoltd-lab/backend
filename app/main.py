@@ -26,6 +26,7 @@ origins = [
     "https://localhost:8100",
     "capacitor://localhost",      # app nativa
     "ionic://localhost",          # si lo usas
+    "http://192.168.100.16:4200"
     # dominio(s) reales de tu frontend
     # "https://tusitio.com",
 ]
