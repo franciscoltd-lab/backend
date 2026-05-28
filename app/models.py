@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, String, Text, DateTime, Enum, ForeignKey, TIMESTAMP, func
+from sqlalchemy import Column, BigInteger, String, Text, DateTime, Enum, ForeignKey, TIMESTAMP, Numeric, func
 from sqlalchemy.orm import relationship
 from app.db.session import Base
 
@@ -12,6 +12,7 @@ class User(Base):
 
     profile = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete")
     gallery = relationship("ProfileGallery", back_populates="user", cascade="all, delete")
+    events = relationship("Event", back_populates="establishment", cascade="all, delete")
     password_reset_codes = relationship("PasswordResetCode", back_populates="user", cascade="all, delete")
 
 
@@ -53,6 +54,27 @@ class ProfileGallery(Base):
     id = Column(BigInteger, primary_key=True, index=True)
     user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     image_url = Column(Text, nullable=False)
+    title = Column(String(160), nullable=True)
+    size = Column(String(80), nullable=True)
+    price = Column(Numeric(10, 2), nullable=True)
+    description = Column(Text, nullable=True)
     created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+    updated_at = Column(TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
 
     user = relationship("User", back_populates="gallery")
+
+
+class Event(Base):
+    __tablename__ = "events"
+    id = Column(BigInteger, primary_key=True, index=True)
+    establishment_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = Column(String(160), nullable=False)
+    description = Column(Text, nullable=True)
+    starts_at = Column(DateTime, nullable=False)
+    ends_at = Column(DateTime, nullable=True)
+    location = Column(String(180), nullable=True)
+    image_url = Column(Text, nullable=True)
+    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+    updated_at = Column(TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
+
+    establishment = relationship("User", back_populates="events")

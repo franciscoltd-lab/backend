@@ -3,12 +3,14 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import inspect, text
 
 from app.db.session import engine
 from app.models import Base
 from app.core.config import settings
 
 from app.routes.auth import router as auth_router
+from app.routes.events import router as events_router
 from app.routes.profile import router as profile_router
 from app.routes.public import router as public_router
 
@@ -39,11 +41,34 @@ app.add_middleware(
 # Create tables (para MVP)
 Base.metadata.create_all(bind=engine)
 
+def ensure_profile_gallery_columns():
+    inspector = inspect(engine)
+    if not inspector.has_table("profile_gallery"):
+        return
+
+    existing = {column["name"] for column in inspector.get_columns("profile_gallery")}
+    missing_columns = {
+        "title": "VARCHAR(160) NULL",
+        "size": "VARCHAR(80) NULL",
+        "price": "DECIMAL(10, 2) NULL",
+        "description": "TEXT NULL",
+        "updated_at": "TIMESTAMP NULL",
+    }
+
+    with engine.begin() as conn:
+        for name, definition in missing_columns.items():
+            if name not in existing:
+                conn.execute(text(f"ALTER TABLE profile_gallery ADD COLUMN {name} {definition}"))
+
+
+ensure_profile_gallery_columns()
+
 # Media
 os.makedirs(settings.MEDIA_DIR, exist_ok=True)
 app.mount("/media", StaticFiles(directory=settings.MEDIA_DIR), name="media")
 
 # Rutas
 app.include_router(auth_router)
+app.include_router(events_router)
 app.include_router(profile_router)
 app.include_router(public_router)

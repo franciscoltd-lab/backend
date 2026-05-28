@@ -1,3 +1,5 @@
+from datetime import datetime
+from decimal import Decimal
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List, Literal
 
@@ -52,6 +54,59 @@ class TokenOut(BaseModel):
 class GalleryItem(BaseModel):
     id: int
     image_url: str
+    title: Optional[str] = None
+    size: Optional[str] = None
+    price: Optional[Decimal] = None
+    description: Optional[str] = None
+
+
+class ArtworkCreate(BaseModel):
+    title: str = Field(min_length=2, max_length=160)
+    size: Optional[str] = Field(default=None, max_length=80)
+    price: Optional[Decimal] = Field(default=None, ge=0)
+    description: Optional[str] = Field(default=None, max_length=3000)
+    image_base64: str
+
+
+class ArtworkUpdate(BaseModel):
+    title: Optional[str] = Field(default=None, min_length=2, max_length=160)
+    size: Optional[str] = Field(default=None, max_length=80)
+    price: Optional[Decimal] = Field(default=None, ge=0)
+    description: Optional[str] = Field(default=None, max_length=3000)
+    image_base64: Optional[str] = None
+
+
+class EventCreate(BaseModel):
+    title: str = Field(min_length=2, max_length=160)
+    description: Optional[str] = Field(default=None, max_length=3000)
+    starts_at: datetime
+    ends_at: Optional[datetime] = None
+    location: Optional[str] = Field(default=None, max_length=180)
+    image_base64: Optional[str] = None
+    image_url: Optional[str] = None
+
+
+class EventUpdate(BaseModel):
+    title: Optional[str] = Field(default=None, min_length=2, max_length=160)
+    description: Optional[str] = Field(default=None, max_length=3000)
+    starts_at: Optional[datetime] = None
+    ends_at: Optional[datetime] = None
+    location: Optional[str] = Field(default=None, max_length=180)
+    image_base64: Optional[str] = None
+    image_url: Optional[str] = None
+
+
+class EventOut(BaseModel):
+    id: int
+    establishment_id: int
+    establishment_name: Optional[str] = None
+    establishment_image_url: Optional[str] = None
+    title: str
+    description: Optional[str]
+    starts_at: datetime
+    ends_at: Optional[datetime]
+    location: Optional[str]
+    image_url: Optional[str]
 
 class ProfileOut(BaseModel):
     role: Role

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.deps import get_db, get_current_user
 from app.models import Profile, ProfileGallery
-from app.schemas import ProfileOut, GalleryItem, ProfileUpdate
+from app.schemas import ArtworkCreate, ArtworkUpdate, GalleryItem, ProfileOut, ProfileUpdate
 from app.models import User
 from app.routes.media import save_base64_image, public_media_url
 
@@ -29,7 +29,23 @@ def me(user: User = Depends(get_current_user)):
         colony=p.colony,
         municipality=p.municipality,
 
-        gallery=[GalleryItem(id=g.id, image_url=public_media_url(g.image_url)) for g in user.gallery]
+        gallery=[serialize_artwork(g) for g in user.gallery]
+    )
+
+
+def require_artist(user: User):
+    if user.role != "artist":
+        raise HTTPException(403, "Only artists can manage artworks")
+
+
+def serialize_artwork(row: ProfileGallery) -> GalleryItem:
+    return GalleryItem(
+        id=row.id,
+        image_url=public_media_url(row.image_url),
+        title=row.title,
+        size=row.size,
+        price=row.price,
+        description=row.description,
     )
 
 @router.patch("/me", response_model=ProfileOut)
@@ -108,6 +124,86 @@ def add_gallery(
 
     db.commit()
     return {"ok": True, "items": urls}
+
+
+@router.get("/me/artworks", response_model=list[GalleryItem])
+def list_artworks(
+    user: User = Depends(get_current_user),
+):
+    require_artist(user)
+    return [serialize_artwork(row) for row in user.gallery]
+
+
+@router.post("/me/artworks", response_model=GalleryItem)
+def create_artwork(
+    payload: ArtworkCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    require_artist(user)
+
+    row = ProfileGallery(
+        user_id=user.id,
+        image_url=save_base64_image(payload.image_base64),
+        title=payload.title,
+        size=payload.size,
+        price=payload.price,
+        description=payload.description,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return serialize_artwork(row)
+
+
+@router.patch("/me/artworks/{artwork_id}", response_model=GalleryItem)
+def update_artwork(
+    artwork_id: int,
+    payload: ArtworkUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    require_artist(user)
+
+    row = db.query(ProfileGallery).filter(
+        ProfileGallery.id == artwork_id,
+        ProfileGallery.user_id == user.id,
+    ).first()
+    if not row:
+        raise HTTPException(404, "Artwork not found")
+
+    data = payload.model_dump(exclude_unset=True)
+    image_base64 = data.pop("image_base64", None)
+    if image_base64:
+        row.image_url = save_base64_image(image_base64)
+
+    for key, value in data.items():
+        setattr(row, key, value)
+
+    db.commit()
+    db.refresh(row)
+    return serialize_artwork(row)
+
+
+@router.delete("/me/artworks/{artwork_id}")
+def delete_artwork(
+    artwork_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    require_artist(user)
+
+    row = db.query(ProfileGallery).filter(
+        ProfileGallery.id == artwork_id,
+        ProfileGallery.user_id == user.id,
+    ).first()
+
+    if not row:
+        raise HTTPException(404, "Artwork not found")
+
+    db.delete(row)
+    db.commit()
+    return {"ok": True}
 
 
 @router.delete("/me/gallery/{gallery_id}")
